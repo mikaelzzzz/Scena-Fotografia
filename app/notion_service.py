@@ -26,6 +26,9 @@ class NotionService:
         # New properties for meeting
         self.prop_data_reuniao = os.environ.get("NOTION_PROP_DATA_REUNIAO", "Data Reunião")
         self.prop_link_reuniao = os.environ.get("NOTION_PROP_LINK_REUNIAO", "Link da Reunião")
+        # Status property and desired value when meeting scheduled
+        self.prop_status = os.environ.get("NOTION_PROP_STATUS", "Status")
+        self.status_value_meeting = os.environ.get("NOTION_STATUS_VALUE_MEETING", "Reunião Agendada")
 
     def get_database_schema(self) -> Dict[str, Any]:
         db = self.client.databases.retrieve(self.database_id)
@@ -123,6 +126,9 @@ class NotionService:
             }
         if link_reuniao:
             properties[self.prop_link_reuniao] = {"url": link_reuniao}
+        # Always set status to the meeting scheduled value
+        if self.prop_status:
+            properties[self.prop_status] = {"status": {"name": self.status_value_meeting}}
 
         self.client.pages.update(page_id=page_id, properties=properties)
         return page_id
