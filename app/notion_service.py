@@ -22,19 +22,11 @@ class NotionService:
         self.prop_tipo_servico = os.environ.get("NOTION_PROP_TIPO_SERVICO", "Tipo Serviço")
         self.prop_link_wpp = os.environ.get("NOTION_PROP_LINK_WPP", "Link Rápido WhatsApp")
         self.prop_email = os.environ.get("NOTION_PROP_EMAIL", "Email")
-
-        self.title_prop_name = self._detect_title_property_name()
-
-    def _detect_title_property_name(self) -> str:
-        db = self.client.databases.retrieve(self.database_id)
-        for name, meta in db["properties"].items():
-            if meta.get("type") == "title":
-                return name
-        return "Name"
+        # Title property name (configurable, defaults to "Nome do Cliente")
+        self.title_prop_name = os.environ.get("NOTION_PROP_TITLE", "Nome do Cliente")
 
     def get_database_schema(self) -> Dict[str, Any]:
         db = self.client.databases.retrieve(self.database_id)
-        # Return a simplified view: property name -> type
         props = {name: meta.get("type") for name, meta in db.get("properties", {}).items()}
         return {"id": db.get("id"), "title_property": self.title_prop_name, "properties": props}
 
@@ -69,6 +61,12 @@ class NotionService:
                     }
                 ]
             }
+        if payload.nome_cliente:
+            properties[self.title_prop_name] = {
+                "title": [
+                    {"type": "text", "text": {"content": payload.nome_cliente}}
+                ]
+            }
         return properties
 
     def _query_page_by_whatsapp(self, normalized_whatsapp: str) -> Optional[Dict[str, Any]]:
@@ -95,12 +93,13 @@ class NotionService:
             page_id = existing["id"]
             return self.client.pages.update(page_id=page_id, properties=properties)
 
-        title_text = f"Lead {norm}"
-        properties[self.title_prop_name] = {
-            "title": [
-                {"type": "text", "text": {"content": title_text}}
-            ]
-        }
+        # If name not provided, default title
+        if self.title_prop_name not in properties:
+            properties[self.title_prop_name] = {
+                "title": [
+                    {"type": "text", "text": {"content": f"Lead {norm}"}}
+                ]
+            }
         return self.client.pages.create(parent={"database_id": self.database_id}, properties=properties)
 
     def update_email_by_whatsapp(self, whatsapp: str, email: str) -> Optional[str]:

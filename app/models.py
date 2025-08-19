@@ -7,6 +7,7 @@ class ZaiaLead(BaseModel):
     data_evento: Optional[str] = Field(default=None, alias="data evento")
     local_evento: Optional[str] = Field(default=None, alias="local evento")
     tipo_evento: Optional[str] = Field(default=None, alias="tipo evento")
+    nome_cliente: Optional[str] = Field(default=None, alias="nome do cliente")
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
