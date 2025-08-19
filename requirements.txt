@@ -4,3 +4,4 @@ pydantic[email]==2.8.2
 python-dotenv==1.0.1
 notion-client==2.2.1
 typing-extensions>=4.8.0
+email-validator==2.2.0
