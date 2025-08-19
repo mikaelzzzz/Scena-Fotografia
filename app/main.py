@@ -13,7 +13,7 @@ from .utils import normalize_whatsapp
 
 load_dotenv()
 
-app = FastAPI(title="Zaia → Notion Bridge", version="0.1.2")
+app = FastAPI(title="Zaia → Notion Bridge", version="0.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -78,7 +78,12 @@ async def create_or_update_lead(payload: ZaiaLead) -> dict:
 @app.post("/webhooks/zaia/lead/email")
 async def update_lead_email(payload: UpdateEmail) -> dict:
     try:
-        page_id = notion_service.update_email_by_whatsapp(payload.whatsapp, payload.email)
+        page_id = notion_service.update_email_by_whatsapp(
+            payload.whatsapp,
+            payload.email,
+            data_reuniao=payload.data_reuniao,
+            link_reuniao=payload.link_reuniao,
+        )
         if page_id is None:
             raise HTTPException(status_code=404, detail="Lead não encontrado para o WhatsApp informado")
         return {"status": "success", "page_id": page_id}
@@ -93,7 +98,7 @@ async def update_lead_email(payload: UpdateEmail) -> dict:
             status_code=500,
             detail={
                 "error": str(e),
-                "payload": payload.model_dump(),
+                "payload": payload.model_dump(by_alias=True),
             },
         )
 

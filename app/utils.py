@@ -1,4 +1,6 @@
 import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 def normalize_whatsapp(raw_value: str) -> str:
@@ -29,3 +31,17 @@ def normalize_whatsapp(raw_value: str) -> str:
 
 def whatsapp_link(normalized_digits: str) -> str:
     return f"https://wa.me/{normalized_digits}"
+
+
+def format_brasilia_datetime(iso_with_tz: str) -> str:
+    """Convert e.g. '2025-09-27T05:00:00-03:00 UTC' to 'DD/MM/AAAA às HH:MM' in America/Sao_Paulo.
+
+    The input may contain a trailing ' UTC' segment; we strip it and rely on the offset.
+    """
+    if not iso_with_tz:
+        return ""
+    cleaned = iso_with_tz.strip().replace(" UTC", "")
+    # Python fromisoformat supports offsets like -03:00
+    dt = datetime.fromisoformat(cleaned)
+    dt_sp = dt.astimezone(ZoneInfo("America/Sao_Paulo"))
+    return dt_sp.strftime("%d/%m/%Y às %H:%M")

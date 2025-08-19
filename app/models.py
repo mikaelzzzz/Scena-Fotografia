@@ -15,3 +15,7 @@ class ZaiaLead(BaseModel):
 class UpdateEmail(BaseModel):
     whatsapp: str
     email: EmailStr
+    data_reuniao: Optional[str] = Field(default=None, alias="data reuniao")
+    link_reuniao: Optional[str] = Field(default=None, alias="link reuniao")
+
+    model_config = ConfigDict(populate_by_name=True, extra="ignore")
