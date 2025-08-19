@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 from dotenv import load_dotenv
+from notion_client.errors import APIResponseError
 
 from .models import ZaiaLead, UpdateEmail
 from .notion_service import NotionService
@@ -10,7 +11,7 @@ from .notion_service import NotionService
 
 load_dotenv()
 
-app = FastAPI(title="Zaia → Notion Bridge", version="0.1.0")
+app = FastAPI(title="Zaia → Notion Bridge", version="0.1.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -28,6 +29,16 @@ async def health() -> dict:
     return {"status": "ok"}
 
 
+@app.get("/debug/notion/schema")
+async def debug_notion_schema() -> dict:
+    try:
+        return notion_service.get_database_schema()
+    except APIResponseError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/webhooks/zaia/lead")
 async def create_or_update_lead(payload: ZaiaLead) -> dict:
     try:
@@ -35,6 +46,8 @@ async def create_or_update_lead(payload: ZaiaLead) -> dict:
         return {"status": "success", "page_id": page.get("id")}
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except APIResponseError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.message)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -48,6 +61,8 @@ async def update_lead_email(payload: UpdateEmail) -> dict:
         return {"status": "success", "page_id": page_id}
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
+    except APIResponseError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.message)
     except HTTPException:
         raise
     except Exception as e:

@@ -32,6 +32,12 @@ class NotionService:
                 return name
         return "Name"
 
+    def get_database_schema(self) -> Dict[str, Any]:
+        db = self.client.databases.retrieve(self.database_id)
+        # Return a simplified view: property name -> type
+        props = {name: meta.get("type") for name, meta in db.get("properties", {}).items()}
+        return {"id": db.get("id"), "title_property": self.title_prop_name, "properties": props}
+
     def _build_common_properties(self, *, normalized_whatsapp: str, payload: ZaiaLead) -> Dict[str, Any]:
         properties: Dict[str, Any] = {
             self.prop_whatsapp: {
