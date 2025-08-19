@@ -3,9 +3,11 @@ services:
     name: zaia-notion-bridge
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: NOTION_API_KEY
         sync: false
       - key: NOTION_DATABASE_ID
