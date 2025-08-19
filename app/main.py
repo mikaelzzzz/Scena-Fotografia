@@ -1,5 +1,6 @@
 import os
-from fastapi import FastAPI, HTTPException
+from typing import Any
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 from dotenv import load_dotenv
@@ -7,11 +8,12 @@ from notion_client.errors import APIResponseError
 
 from .models import ZaiaLead, UpdateEmail
 from .notion_service import NotionService
+from .utils import normalize_whatsapp
 
 
 load_dotenv()
 
-app = FastAPI(title="Zaia → Notion Bridge", version="0.1.1")
+app = FastAPI(title="Zaia → Notion Bridge", version="0.1.2")
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +29,21 @@ notion_service = NotionService()
 @app.get("/")
 async def health() -> dict:
     return {"status": "ok"}
+
+
+@app.post("/debug/zaia/payload")
+async def debug_zaia_payload(request: Request) -> dict:
+    try:
+        body: Any = await request.json()
+    except Exception:
+        body = None
+    normalized = None
+    try:
+        if isinstance(body, dict) and body.get("whatsapp"):
+            normalized = normalize_whatsapp(str(body.get("whatsapp")))
+    except Exception:
+        normalized = None
+    return {"received": body, "normalized_whatsapp": normalized}
 
 
 @app.get("/debug/notion/schema")
@@ -49,7 +66,13 @@ async def create_or_update_lead(payload: ZaiaLead) -> dict:
     except APIResponseError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.message)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": str(e),
+                "payload": payload.model_dump(by_alias=True),
+            },
+        )
 
 
 @app.post("/webhooks/zaia/lead/email")
@@ -66,7 +89,13 @@ async def update_lead_email(payload: UpdateEmail) -> dict:
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": str(e),
+                "payload": payload.model_dump(),
+            },
+        )
 
 
 def get_port() -> int:
