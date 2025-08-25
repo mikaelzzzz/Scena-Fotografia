@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 from notion_client import Client
 
 from .models import ZaiaLead, UpdateEmail
-from .utils import normalize_whatsapp, whatsapp_link, format_brasilia_datetime, combine_zaia_datetime
+from .utils import normalize_whatsapp, whatsapp_link, format_brasilia_datetime
 
 
 class NotionService:
@@ -66,6 +66,12 @@ class NotionService:
                     }
                 ]
             }
+        if getattr(payload, "nome_cliente", None):
+            properties[self.title_prop_name] = {
+                "title": [
+                    {"type": "text", "text": {"content": payload.nome_cliente}}
+                ]
+            }
         return properties
 
     def _query_page_by_whatsapp(self, normalized_whatsapp: str) -> Optional[Dict[str, Any]]:
@@ -88,25 +94,19 @@ class NotionService:
         existing = self._query_page_by_whatsapp(norm)
         properties = self._build_common_properties(normalized_whatsapp=norm, payload=payload)
 
-        # Always set the title property - use client name if available, otherwise generic
-        if getattr(payload, "nome_cliente", None):
-            title_text = payload.nome_cliente
-        else:
-            title_text = f"Lead {norm}"
-        
-        properties[self.title_prop_name] = {
-            "title": [
-                {"type": "text", "text": {"content": title_text}}
-            ]
-        }
-
         if existing:
             page_id = existing["id"]
             return self.client.pages.update(page_id=page_id, properties=properties)
 
+        if self.title_prop_name not in properties:
+            properties[self.title_prop_name] = {
+                "title": [
+                    {"type": "text", "text": {"content": f"Lead {norm}"}}
+                ]
+            }
         return self.client.pages.create(parent={"database_id": self.database_id}, properties=properties)
 
-    def update_email_by_whatsapp(self, whatsapp: str, email: str, *, start_date: Optional[str] = None, start_time: Optional[str] = None, link_reuniao: Optional[str] = None) -> Optional[str]:
+    def update_email_by_whatsapp(self, whatsapp: str, email: str, *, data_reuniao: Optional[str] = None, link_reuniao: Optional[str] = None) -> Optional[str]:
         norm = normalize_whatsapp(whatsapp)
         if not norm:
             return None
@@ -116,8 +116,11 @@ class NotionService:
         page_id = existing["id"]
 
         properties: Dict[str, Any] = {self.prop_email: {"email": email}}
-        if start_date and start_time:
-            formatted = combine_zaia_datetime(start_date, start_time)
+        if data_reuniao:
+            try:
+                formatted = format_brasilia_datetime(data_reuniao)
+            except Exception:
+                formatted = data_reuniao
             properties[self.prop_data_reuniao] = {
                 "rich_text": [{"type": "text", "text": {"content": formatted}}]
             }
