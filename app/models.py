@@ -8,7 +8,6 @@ class ZaiaLead(BaseModel):
     local_evento: Optional[str] = Field(default=None, alias="data.local_evento")
     tipo_evento: Optional[str] = Field(default=None, alias="data.tipo_evento")
     nome_cliente: Optional[str] = Field(default=None, alias="data.nome_lead")
-    interesse_reuniao: Optional[bool] = Field(default=None, alias="data.interesse_reuniao")
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
 
