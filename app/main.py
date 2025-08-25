@@ -13,7 +13,7 @@ from .utils import normalize_whatsapp
 
 load_dotenv()
 
-app = FastAPI(title="Zaia → Notion Bridge", version="0.3.0")
+app = FastAPI(title="Zaia → Notion Bridge", version="0.3.1")
 
 app.add_middleware(
     CORSMiddleware,
@@ -59,8 +59,24 @@ async def debug_notion_schema() -> dict:
 @app.post("/webhooks/zaia/lead")
 async def create_or_update_lead(payload: ZaiaLead) -> dict:
     try:
+        # Debug: log what we received
+        debug_info = {
+            "raw_payload": payload.model_dump(by_alias=True),
+            "parsed_fields": {
+                "whatsapp": payload.whatsapp,
+                "data_evento": payload.data_evento,
+                "local_evento": payload.local_evento,
+                "tipo_evento": payload.tipo_evento,
+                "nome_cliente": getattr(payload, 'nome_cliente', None)
+            }
+        }
+        
         page = notion_service.create_or_update_lead(payload)
-        return {"status": "success", "page_id": page.get("id")}
+        return {
+            "status": "success", 
+            "page_id": page.get("id"),
+            "debug": debug_info
+        }
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except APIResponseError as e:
