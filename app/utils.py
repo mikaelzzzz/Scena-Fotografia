@@ -45,3 +45,30 @@ def format_brasilia_datetime(iso_with_tz: str) -> str:
     dt = datetime.fromisoformat(cleaned)
     dt_sp = dt.astimezone(ZoneInfo("America/Sao_Paulo"))
     return dt_sp.strftime("%d/%m/%Y às %H:%M")
+
+
+def combine_zaia_datetime(date_str: str, time_str: str) -> str:
+    """Combine Zaia's separate date (DD/MM/YYYY) and time (HH:MM) into a formatted string.
+    
+    Returns: 'DD/MM/AAAA às HH:MM'
+    """
+    if not date_str or not time_str:
+        return ""
+    
+    try:
+        # Parse date DD/MM/YYYY
+        day, month, year = date_str.split("/")
+        # Parse time HH:MM
+        hour, minute = time_str.split(":")
+        
+        # Create datetime object (assuming Brasília timezone)
+        dt = datetime(
+            int(year), int(month), int(day),
+            int(hour), int(minute),
+            tzinfo=ZoneInfo("America/Sao_Paulo")
+        )
+        
+        return dt.strftime("%d/%m/%Y às %H:%M")
+    except Exception:
+        # Fallback: return as-is if parsing fails
+        return f"{date_str} às {time_str}"

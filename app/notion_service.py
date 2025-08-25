@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 from notion_client import Client
 
 from .models import ZaiaLead, UpdateEmail
-from .utils import normalize_whatsapp, whatsapp_link, format_brasilia_datetime
+from .utils import normalize_whatsapp, whatsapp_link, format_brasilia_datetime, combine_zaia_datetime
 
 
 class NotionService:
@@ -106,7 +106,7 @@ class NotionService:
             }
         return self.client.pages.create(parent={"database_id": self.database_id}, properties=properties)
 
-    def update_email_by_whatsapp(self, whatsapp: str, email: str, *, data_reuniao: Optional[str] = None, link_reuniao: Optional[str] = None) -> Optional[str]:
+    def update_email_by_whatsapp(self, whatsapp: str, email: str, *, start_date: Optional[str] = None, start_time: Optional[str] = None, link_reuniao: Optional[str] = None) -> Optional[str]:
         norm = normalize_whatsapp(whatsapp)
         if not norm:
             return None
@@ -116,11 +116,8 @@ class NotionService:
         page_id = existing["id"]
 
         properties: Dict[str, Any] = {self.prop_email: {"email": email}}
-        if data_reuniao:
-            try:
-                formatted = format_brasilia_datetime(data_reuniao)
-            except Exception:
-                formatted = data_reuniao
+        if start_date and start_time:
+            formatted = combine_zaia_datetime(start_date, start_time)
             properties[self.prop_data_reuniao] = {
                 "rich_text": [{"type": "text", "text": {"content": formatted}}]
             }

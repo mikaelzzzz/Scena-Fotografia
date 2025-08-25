@@ -13,7 +13,7 @@ from .utils import normalize_whatsapp
 
 load_dotenv()
 
-app = FastAPI(title="Zaia → Notion Bridge", version="0.2.0")
+app = FastAPI(title="Zaia → Notion Bridge", version="0.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -81,7 +81,8 @@ async def update_lead_email(payload: UpdateEmail) -> dict:
         page_id = notion_service.update_email_by_whatsapp(
             payload.whatsapp,
             payload.email,
-            data_reuniao=payload.data_reuniao,
+            start_date=payload.start_date,
+            start_time=payload.start_time,
             link_reuniao=payload.link_reuniao,
         )
         if page_id is None:
