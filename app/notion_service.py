@@ -1,3 +1,4 @@
+# Zaia -> Notion Bridge - Notion integration service
 import os
 from typing import Any, Dict, Optional
 
@@ -66,12 +67,6 @@ class NotionService:
                     }
                 ]
             }
-        if getattr(payload, "nome_cliente", None):
-            properties[self.title_prop_name] = {
-                "title": [
-                    {"type": "text", "text": {"content": payload.nome_cliente}}
-                ]
-            }
         return properties
 
     def _query_page_by_whatsapp(self, normalized_whatsapp: str) -> Optional[Dict[str, Any]]:
@@ -94,16 +89,22 @@ class NotionService:
         existing = self._query_page_by_whatsapp(norm)
         properties = self._build_common_properties(normalized_whatsapp=norm, payload=payload)
 
+        # Always set the title property - use client name if available, otherwise generic
+        if getattr(payload, "nome_cliente", None):
+            title_text = payload.nome_cliente
+        else:
+            title_text = f"Lead {norm}"
+        
+        properties[self.title_prop_name] = {
+            "title": [
+                {"type": "text", "text": {"content": title_text}}
+            ]
+        }
+
         if existing:
             page_id = existing["id"]
             return self.client.pages.update(page_id=page_id, properties=properties)
 
-        if self.title_prop_name not in properties:
-            properties[self.title_prop_name] = {
-                "title": [
-                    {"type": "text", "text": {"content": f"Lead {norm}"}}
-                ]
-            }
         return self.client.pages.create(parent={"database_id": self.database_id}, properties=properties)
 
     def update_email_by_whatsapp(self, whatsapp: str, email: str, *, data_reuniao: Optional[str] = None, link_reuniao: Optional[str] = None) -> Optional[str]:

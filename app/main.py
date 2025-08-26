@@ -1,3 +1,4 @@
+# Zaia -> Notion Bridge - Main API endpoints
 import os
 from typing import Any
 from fastapi import FastAPI, HTTPException, Request
@@ -90,7 +91,7 @@ async def update_lead_email(payload: UpdateEmail) -> dict:
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except APIResponseError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.message)
+        raise HTTPException(status_code=500, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:

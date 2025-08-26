@@ -1,3 +1,4 @@
+# Zaia -> Notion Bridge - Data models for API payloads
 from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from typing import Optional
 
@@ -15,8 +16,7 @@ class ZaiaLead(BaseModel):
 class UpdateEmail(BaseModel):
     whatsapp: str
     email: EmailStr
-    start_date: Optional[str] = Field(default=None, alias="action.googleCalendar.startDate")
-    start_time: Optional[str] = Field(default=None, alias="action.googleCalendar.startTime")
+    data_reuniao: Optional[str] = Field(default=None, alias="data reuniao")
     link_reuniao: Optional[str] = Field(default=None, alias="link reuniao")
 
     model_config = ConfigDict(populate_by_name=True, extra="ignore")
